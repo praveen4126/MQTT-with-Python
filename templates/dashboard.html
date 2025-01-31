@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Tank Dashboard</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            background-color: #f0f8ff;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.5s;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        h2, h3 {
+            margin: 20px 0;
+        }
+        .tank-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tank {
+            width: 100%;
+            max-width: 400px; /* Increased width */
+            height: 200px; /* Reduced height */
+            border: 5px solid #333;
+            border-radius: 10px 10px 0 0;
+            position: relative;
+            margin: 20px auto;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #ccc 0%, #fff 100%);
+            display: flex;
+            align-items: center;
+        }
+        .water {
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            background: linear-gradient(to bottom, #00f 0%, #0099ff 100%);
+            transition: height 0.5s;
+        }
+        .vertical-bar {
+            width: 30px;
+            height: 200px; /* Same height as the tank */
+            border: 2px solid #000;
+            background-color: #fff;
+            position: relative;
+            margin-right: 10px; /* Space between the bar and the tank */
+        }
+        .vertical-bar-fill {
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            background-color: #0f0;
+            transition: height 0.5s, background-color 0.5s;
+        }
+        .led {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .led-on {
+            background-color: #0f0;
+        }
+        .led-off {
+            background-color: #f00;
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: #fff;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .blink {
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { background-color: #00f; }
+            50% { background-color: #ff0000; }
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            .tank {
+                max-width: 160px; /* Adjusted width */
+                height: 160px; /* Adjusted height */
+            }
+            .vertical-bar {
+                height: 160px; /* Adjusted height */
+            }
+            button {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+        }
+        @media (max-width: 480px) {
+            .container {
+                padding: 10px;
+            }
+            .tank {
+                max-width: 120px; /* Adjusted width */
+                height: 120px; /* Adjusted height */
+            }
+            .vertical-bar {
+                height: 120px; /* Adjusted height */
+            }
+            button {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Water Tank Level</h2>
+        <div class="tank-container">
+            <div class="vertical-bar">
+                <div class="vertical-bar-fill" id="verticalStatusBar"></div>
+            </div>
+            <div class="tank">
+                <div class="water" id="waterLevel" style="height: 50%;"></div>
+            </div>
+        </div>
+        <p id="waterLevelText">50%</p>
+        
+        <h3>MOTOR Status: <span id="motorStatus">OFF</span></h3>
+        <div class="led led-off" id="ledStatus"></div>
+        
+        <button onclick="toggleLED('ON')">Turn ON MOTOR</button>
+        <button onclick="toggleLED('OFF')">Turn OFF MOTOR</button>
+    </div>
+
+    <script>
+        function updateDashboard() {
+            $.getJSON("/status", function(data) {
+                const minLevel = 1; // Minimum water level in cm
+                const maxLevel = 5; // Maximum water level in cm
+                const waterLevelCm = data.water_level; // Water level in cm
+                const waterLevelPercent = ((waterLevelCm - minLevel) / (maxLevel - minLevel)) * 100;
+
+                // Ensure the percentage is within 0% to 100%
+                const validWaterLevelPercent = Math.max(0, Math.min(100, waterLevelPercent));
+
+                $("#waterLevel").css("height", validWaterLevelPercent + "%");
+                $("#waterLevelText").text(validWaterLevelPercent.toFixed(1) + "%");
+                $("#ledStatus").toggleClass("led-on", data.led_status === "ON");
+                $("#ledStatus").toggleClass("led-off", data.led_status === "OFF");
+                $("#motorStatus").text(data.led_status);
+
+                let barColor = waterLevelCm <= minLevel || waterLevelCm >= maxLevel || waterLevelCm === 0 ? "#f00" : "#0f0";
+                $("#verticalStatusBar").css({
+                    "height": validWaterLevelPercent + "%",
+                    "background-color": barColor
+                });
+
+                if (waterLevelCm <= minLevel || waterLevelCm >= maxLevel || waterLevelCm === 0) {
+                    $("#verticalStatusBar").addClass("blink");
+                } else {
+                    $("#verticalStatusBar").removeClass("blink");
+                }
+            });
+        }
+
+        function toggleLED(state) {
+            $.post("/control_led/" + state, function(response) {
+                if (response.success) {
+                    updateDashboard();
+                }
+            });
+        }
+
+        setInterval(updateDashboard, 2000);
+    </script>
+
+</body>
+</html>
