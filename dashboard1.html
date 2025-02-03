@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Tank Dashboard</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(160deg, #e3f2fd 0%, #bbdefb 50%, #90caf9 100%);
+            background-image: url("data:image/svg+xml,%3Csvg width='52' height='26' viewBox='0 0 52 26' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.1'%3E%3Cpath d='M10 10c0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6h2c0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4v2c-3.314 0-6-2.686-6-6 0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6zm25.464-1.95l8.486 8.486-1.414 1.414-8.486-8.486 1.414-1.414z' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            animation: gradientShift 15s ease infinite;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        h2, h3 {
+            margin: 20px 0;
+            color: #2c3e50;
+        }
+
+        .tank-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: translateY(0px);
+            animation: float 4s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .tank {
+            width: 100%;
+            max-width: 400px;
+            height: 400px;
+            border: 5px solid #2c3e50;
+            border-radius: 10px 10px 0 0;
+            position: relative;
+            margin: 20px auto;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #e0e0e0 0%, #f8f8f8 100%);
+        }
+
+        .water {
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            background: linear-gradient(to bottom, #1a8cff 0%, #0066cc 100%);
+            transition: height 1s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: inset 0 0 20px rgba(0, 0, 255, 0.3);
+        }
+
+        .water::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 0;
+            right: 0;
+            height: 20px;
+            background: linear-gradient(to bottom, 
+                rgba(255, 255, 255, 0.5) 0%,
+                rgba(255, 255, 255, 0.2) 100%);
+            animation: waves 2s infinite linear;
+        }
+
+        @keyframes waves {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-100%); }
+        }
+
+        .vertical-bar {
+            width: 30px;
+            height: 400px;
+            border: 2px solid #2c3e50;
+            background-color: #fff;
+            position: relative;
+            margin-right: 20px;
+            border-radius: 5px;
+        }
+
+        .vertical-bar-fill {
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            transition: height 0.5s, background-color 0.5s;
+            border-radius: 3px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+            margin: 10px;
+        }
+
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .bubble {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: bubble-rise 4s infinite linear;
+        }
+
+        @keyframes bubble-rise {
+            0% { transform: translateY(0); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(-100px); opacity: 0; }
+        }
+
+        .bg-bubble {
+            position: fixed;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            animation: bubble 15s infinite;
+            z-index: -1;
+        }
+
+        @keyframes bubble {
+            0% { transform: translateY(100vh) scale(0.5); opacity: 0; }
+            50% { opacity: 0.4; }
+            100% { transform: translateY(-100vh) scale(1.2); opacity: 0; }
+        }
+
+        #waterLevelText {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 15px 0;
+        }
+
+        #motorStatus {
+            color: #2196F3;
+            font-weight: bold;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 20px auto;
+                padding: 15px;
+            }
+            
+            .tank {
+                max-width: 250px;
+                height: 300px;
+            }
+            
+            .vertical-bar {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-bubble" style="left: 10%; width: 40px; height: 40px; animation-delay: 0s"></div>
+    <div class="bg-bubble" style="left: 30%; width: 60px; height: 60px; animation-delay: 2s"></div>
+    <div class="bg-bubble" style="left: 70%; width: 50px; height: 50px; animation-delay: 5s"></div>
+    <div class="bg-bubble" style="left: 90%; width: 30px; height: 30px; animation-delay: 7s"></div>
+
+    <div class="container">
+        <h2>Water Tank Monitoring System</h2>
+        <div class="tank-container">
+            <div class="vertical-bar">
+                <div class="vertical-bar-fill" id="verticalStatusBar"></div>
+            </div>
+            <div class="tank">
+                <div class="water" id="waterLevel" style="height: 50%;"></div>
+            </div>
+        </div>
+        <p id="waterLevelText">50%</p>
+        
+        <h3>PUMP STATUS: <span id="motorStatus">OFF</span></h3>
+        
+        <label class="switch">
+            <input type="checkbox" id="motorSwitch" onchange="toggleLED(this.checked ? 'ON' : 'OFF')">
+            <span class="slider"></span>
+        </label>
+    </div>
+
+    <script>
+        function createBubbles() {
+            const waterLevel = document.getElementById('waterLevel');
+            for(let i = 0; i < 5; i++) {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                bubble.style.width = Math.random() * 6 + 4 + 'px';
+                bubble.style.height = bubble.style.width;
+                bubble.style.left = Math.random() * 90 + 5 + '%';
+                bubble.style.animationDelay = Math.random() * 2 + 's';
+                waterLevel.appendChild(bubble);
+            }
+        }
+
+        function updateDashboard() {
+            $.getJSON("/status", function(data) {
+                const minLevel = 1;
+                const maxLevel = 5;
+                const waterLevelCm = data.water_level;
+                const waterLevelPercent = ((waterLevelCm - minLevel) / (maxLevel - minLevel)) * 100;
+                const validWaterLevelPercent = Math.max(0, Math.min(100, waterLevelPercent));
+
+                $("#waterLevel").css("height", validWaterLevelPercent + "%");
+                $("#waterLevelText").text(validWaterLevelPercent.toFixed(1) + "%");
+                $("#motorStatus").text(data.led_status);
+                $("#motorSwitch").prop('checked', data.led_status === "ON");
+
+                const barColor = waterLevelCm <= minLevel || waterLevelCm >= maxLevel ? 
+                    "linear-gradient(to top, #ff4444, #cc0000)" : 
+                    "linear-gradient(to top, #00ff00, #009900)";
+                
+                $("#verticalStatusBar").css({
+                    "height": validWaterLevelPercent + "%",
+                    "background": barColor
+                });
+
+                if(data.led_status === "ON") {
+                    createBubbles();
+                }
+
+                if(waterLevelCm <= minLevel || waterLevelCm >= maxLevel) {
+                    $("#waterLevel").addClass("blink");
+                } else {
+                    $("#waterLevel").removeClass("blink");
+                }
+            });
+        }
+
+        function toggleLED(state) {
+            $.post("/control_led/" + state, function(response) {
+                if (response.success) {
+                    updateDashboard();
+                }
+            });
+        }
+
+        setInterval(() => {
+            const bubbles = document.querySelectorAll('.bubble');
+            bubbles.forEach(bubble => bubble.remove());
+            if($("#motorSwitch").prop('checked')) createBubbles();
+        }, 4000);
+
+        setInterval(updateDashboard, 2000);
+
+        // Create background bubbles
+        function createBackgroundBubbles() {
+            const bubbleCount = 8;
+            for(let i = 0; i < bubbleCount; i++) {
+                const bubble = document.createElement('div');
+                bubble.className = 'bg-bubble';
+                const size = Math.random() * 30 + 20;
+                bubble.style.width = `${size}px`;
+                bubble.style.height = `${size}px`;
+                bubble.style.left = `${Math.random() * 100}%`;
+                bubble.style.animationDelay = `${Math.random() * 10}s`;
+                document.body.appendChild(bubble);
+            }
+        }
+        createBackgroundBubbles();
+    </script>
+</body>
+</html>
